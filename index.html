@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>طلب مياه فجر</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+    }
+
+    .product-img {
+      width: 100%;
+      max-height: 380px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin-bottom: 15px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .buy-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      font-size: 18px;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 100%;
+      box-shadow: 0 3px 6px rgba(40, 167, 69, 0.3);
+      transition: background-color 0.2s;
+      text-decoration: none;
+      display: inline-block;
+      box-sizing: border-box;
+    }
+
+    .buy-btn:active {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <img src="image.png" alt="مياه فجر" class="product-img">
+    <div class="title">مياه فجر (FAJR WATER)</div>
+    
+    <!-- زر الشراء ينقل للماسنـجر فوراً مع نص "موية" -->
+    <a href="fb-messenger://share/?link=موية" class="buy-btn" id="buyBtn">شراء</a>
+  </div>
+
+  <script>
+    // احتياطي لفتح ماسنجر من الجوال بشكل مباشر
+    document.getElementById('buyBtn').addEventListener('click', function(e) {
+      const text = encodeURIComponent("موية");
+      const messengerUrl = `fb-messenger://share/?link=${text}`;
+      
+      window.location.href = messengerUrl;
+    });
+  </script>
+
+</body>
+</html>
