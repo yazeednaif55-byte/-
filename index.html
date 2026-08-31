@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>متجر المنتجات الشامل الأكبر</title>
+  <style>
+    :root {
+      --bg-color: #f2f2f7;
+      --card-bg: #ffffff;
+      --text-color: #1c1c1e;
+      --subtext-color: #8e8e93;
+      --btn-bg: #34c759;
+      --btn-text: #ffffff;
+      --icon-bg: #ffffff;
+      --border-color: #e5e5ea;
+      --base-font-size: 16px;
+    }
+
+    /* متغیرات الوضع الداكن */
+    body.dark-mode {
+      --bg-color: #000000;
+      --card-bg: #1c1c1e;
+      --text-color: #ffffff;
+      --subtext-color: #a1a1a6;
+      --icon-bg: #2c2c2e;
+      --border-color: #38383a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-size: var(--base-font-size);
+      margin: 0;
+      padding: 20px;
+      padding-top: 70px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* زر الفلوس الثابت في الزاوية اليمين */
+    .money-btn {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background-color: var(--icon-bg);
+      font-size: 26px;
+      padding: 10px 14px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      z-index: 999;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+    }
+
+    /* زر الإعدادات الثابت في الزاوية اليسار */
+    .settings-btn {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      background-color: var(--icon-bg);
+      font-size: 22px;
+      padding: 10px 14px;
+      border-radius: 50px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+    }
+
+    .money-btn:active, .settings-btn:active {
+      transform: scale(0.9);
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      width: 100%;
+      max-width: 350px;
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      text-align: center;
+      box-sizing: border-box;
+      transition: background-color 0.3s ease;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      color: var(--text-color);
+      font-size: 1.35em;
+    }
+
+    .card p {
+      color: var(--subtext-color);
+      font-size: 0.95em;
+      margin-bottom: 20px;
+    }
+
+    .buy-btn {
+      background-color: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      width: 100%;
+      padding: 14px 0;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(52, 199, 89, 0.3);
+      -webkit-appearance: none;
+      outline: none;
+    }
+
+    .buy-btn:active {
+      transform: scale(0.97);
+      background-color: #2eaf4e;
+    }
+
+    /* صفحة الإعدادات */
+    .settings-page {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-color);
+      z-index: 10000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .settings-page.active {
+      display: flex;
+    }
+
+    .settings-header {
+      width: 100%;
+      max-width: 350px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .settings-header h1 {
+      margin: 0;
+      font-size: 1.5em;
+      color: var(--text-color);
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 1.1em;
+      color: #007aff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .settings-section-title {
+      width: 100%;
+      max-width: 350px;
+      font-size: 0.85em;
+      color: var(--subtext-color);
+      margin: 15px 5px 5px 5px;
+      text-transform: uppercase;
+    }
+
+    .settings-group {
+      width: 100%;
+      max-width: 350px;
+      background-color: var(--card-bg);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      font-size: 1em;
+      color: var(--text-color);
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-row.selected::after {
+      content: "✓";
+      color: #007aff;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    /* Switch Toggle */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 26px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+      border-radius: 34px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #34c759;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    .reset-btn {
+      color: #ff3b30;
+      font-weight: bold;
+      text-align: center;
+      justify-content: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- زر الفلوس في الزاوية يمين فوق -->
+  <a href="https://sites.google.com/view/shndrbndr/الصفحة-الرئيسية" class="money-btn" title="الموقع">
+    💵
+  </a>
+
+  <!-- زر الإعدادات في الزاوية يسار فوق -->
+  <button class="settings-btn" onclick="openSettings()" title="الإعدادات">
+    ⚙️
+  </button>
+
+  <!-- صفحة الإعدادات -->
+  <div class="settings-page" id="settingsPage">
+    <div class="settings-header">
+      <h1 id="txtSettingsTitle">الإعدادات</h1>
+      <button class="close-btn" id="txtClose" onclick="closeSettings()">إغلاق</button>
+    </div>
+
+    <!-- 1. المظهر -->
+    <div class="settings-section-title" id="txtHeaderTheme">المظهر والنمط</div>
+    <div class="settings-group">
+      <div class="setting-row selected" id="optLight" onclick="setTheme('light')">
+        <span>☀️ فاتح (أبيض)</span>
+      </div>
+      <div class="setting-row" id="optDark" onclick="setTheme('dark')">
+        <span>🌙 داكن (أسود)</span>
+      </div>
+    </div>
+
+    <!-- 2. حجم الخط -->
+    <div class="settings-section-title">حجم النصوص</div>
+    <div class="settings-group">
+      <div class="setting-row" id="fontSmall" onclick="setFontSize('small')">
+        <span>صغير</span>
+      </div>
+      <div class="setting-row selected" id="fontMedium" onclick="setFontSize('medium')">
+        <span>متوسط</span>
+      </div>
+      <div class="setting-row" id="fontLarge" onclick="setFontSize('large')">
+        <span>كبير</span>
+      </div>
+    </div>
+
+    <!-- 3. التنبيهات واللغة -->
+    <div class="settings-section-title">التفضيلات العامة</div>
+    <div class="settings-group">
+      <div class="setting-row">
+        <span>🔔 الإشعارات والتحذيرات</span>
+        <label class="switch">
+          <input type="checkbox" checked id="notifToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="setting-row" id="langRow" onclick="toggleLanguage()">
+        <span>🌐 اللغة / Language</span>
+        <span style="color: var(--subtext-color);" id="currentLangText">العربية</span>
+      </div>
+    </div>
+
+    <!-- 4. إعادة التعيين -->
+    <div class="settings-section-title">النظام</div>
+    <div class="settings-group">
+      <div class="setting-row reset-btn" onclick="resetSettings()">
+        <span>🔄 إعادة ضبط الإعدادات</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- الألعاب والأجهزة -->
+  <div class="card">
+    <h2>🎮 بلايستيشن / سوني</h2>
+    <p>شراء أجهزة وبطاقات سوني</p>
+    <button class="buy-btn" onclick="shareProduct('بلايستيشن 🎮', 'طلب شراء جهاز / بطاقات سوني')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🕹️ إكس بوكس</h2>
+    <p>شراء بطاقات واشتراكات Game Pass</p>
+    <button class="buy-btn" onclick="shareProduct('إكس بوكس 🕹️', 'طلب شراء بطاقات إكس بوكس')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🔴 نينتندو سويتش</h2>
+    <p>شراء ألعاب وأجهزة نينتندو</p>
+    <button class="buy-btn" onclick="shareProduct('نينتندو سويتش 🔴', 'طلب شراء جهاز نينتندو')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🖥️ كمبيوتر ألعاب (PC)</h2>
+    <p>شراء تجمعيات كمبيوتر وقطع تجميع</p>
+    <button class="buy-btn" onclick="shareProduct('كمبيوتر ألعاب 🖥️', 'طلب شراء تجمعية بي سي')">شراء</button>
+  </div>
+
+  <!-- الهواتف والإلكترونيات -->
+  <div class="card">
+    <h2>📱 آيفون</h2>
+    <p>شراء أحدث أجهزة آبل آيفون</p>
+    <button class="buy-btn" onclick="shareProduct('آيفون 📱', 'طلب شراء جهاز آيفون جديد')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>📲 سامسونج جالاكسي</h2>
+    <p>شراء أجهزة سامسونج الذكية</p>
+    <button class="buy-btn" onclick="shareProduct('سامسونج 📲', 'طلب شراء جوال سامسونج')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🎧 سماعات إيربودز</h2>
+    <p>شراء سماعات لاسلكية عالية الجودة</p>
+    <button class="buy-btn" onclick="shareProduct('سماعات إيربودز 🎧', 'طلب شراء سماعات لاسلكية')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>⌚ ساعة ذكية</h2>
+    <p>شراء ساعة ذكية رياضية</p>
+    <button class="buy-btn" onclick="shareProduct('ساعة ذكية ⌚', 'طلب شراء ساعة ذكية')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>💻 لابتوب محمول</h2>
+    <p>شراء جهاز كمبيوتر محمول للعمل والألعاب</p>
+    <button class="buy-btn" onclick="shareProduct('لابتوب 💻', 'طلب شراء جهاز لابتوب')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🖱️ ماوس كمبيوتر</h2>
+    <p>شراء ماوس احترافي للألعاب والعمل</p>
+    <button class="buy-btn" onclick="shareProduct('ماوس كمبيوتر 🖱️', 'طلب شراء ماوس كمبيوتر')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>⌨️ كيبورد ميكانيكي</h2>
+    <p>شراء كيبورد ألعاب سريع</p>
+    <button class="buy-btn" onclick="shareProduct('كيبورد ميكانيكي ⌨️', 'طلب شراء كيبورد ميكانيكي')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>📱 كفر جوال</h2>
+    <p>شراء كفر حماية ضد الصدمات</p>
+    <button class="buy-btn" onclick="shareProduct('كفر جوال 📱', 'طلب شراء كفر حماية للهاتف')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>⚡ شاحن وكيبل</h2>
+    <p>شراء شاحن سريع وكيبل معتمد</p>
+    <button class="buy-btn" onclick="shareProduct('شاحن وكيبل ⚡', 'طلب شراء شاحن سريع وكيبل')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🔋 بنك طاقة (شاحن متنقل)</h2>
+    <p>شراء شاحن سفري بسعة كبيرة</p>
+    <button class="buy-btn" onclick="shareProduct('بنك طاقة 🔋', 'طلب شراء بنك طاقة متنقل')">شراء</button>
+  </div>
+
+  <!-- الشاشات والمنزل -->
+  <div class="card">
+    <h2>📺 شاشة تلفزيون ذكية</h2>
+    <p>شراء شاشة 4K ذكية للمنزل</p>
+    <button class="buy-btn" onclick="shareProduct('شاشة تلفزيون 📺', 'طلب شراء شاشة ذكية')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>📻 ريموت كنترول</h2>
+    <p>شراء ريموت تحكم للتلفزيون والأجهزة</p>
+    <button class="buy-btn" onclick="shareProduct('ريموت كنترول 📻', 'طلب شراء جهاز ريموت')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>💨 مكنسة ذكية</h2>
+    <p>شراء مكنسة روبوت أتوماتيكية</p>
+    <button class="buy-btn" onclick="shareProduct('مكنسة روبوت 💨', 'طلب شراء مكنسة ذكية')">شراء</button>
+  </div>
+
+  <!-- المشروبات والمستلزمات -->
+  <div class="card">
+    <h2>💧 مياه فجر</h2>
+    <p>شراء كراتين مياه فجر</p>
+    <button class="buy-btn" onclick="shareProduct('مياه فجر 💧', 'طلب شراء كرتون مياه فجر 330 مل')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>☕ كوب قهوة حراري</h2>
+    <p>شراء كوب حافظ للحرارة والبرودة</p>
+    <button class="buy-btn" onclick="shareProduct('كوب قهوة ☕', 'طلب شراء كوب حراري للقهوة')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🧻 مناديل</h2>
+    <p>شراء شدة مناديل ناعمة فاخرة</p>
+    <button class="buy-btn" onclick="shareProduct('مناديل 🧻', 'طلب شراء شدة مناديل')">شراء</button>
+  </div>
+
+  <!-- الكماليات والشخصية -->
+  <div class="card">
+    <h2>✨ عطور فاخرة</h2>
+    <p>شراء عطورات رجالية ونسائية</p>
+    <button class="buy-btn" onclick="shareProduct('عطور فاخرة ✨', 'طلب شراء عطر فاخر')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>👓 نظارات شمسية</h2>
+    <p>شراء نظارات ماركات عالمية</p>
+    <button class="buy-btn" onclick="shareProduct('نظارات شمسية 👓', 'طلب شراء نظارة شمسية')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>👕 ملابس رياضية</h2>
+    <p>شراء طقم رياضي مريح</p>
+    <button class="buy-btn" onclick="shareProduct('ملابس رياضية 👕', 'طلب شراء ملابس رياضية')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>👟 أحذية رياضية</h2>
+    <p>شراء شوز رياضي مريح للمشي</p>
+    <button class="buy-btn" onclick="shareProduct('أحذية رياضية 👟', 'طلب شراء حذاء رياضي')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>📚 كتب ورقية</h2>
+    <p>شراء أفضل الكتب والروايات أكثر مبيعاً</p>
+    <button class="buy-btn" onclick="shareProduct('كتاب 📚', 'طلب شراء كتاب ورقي')">شراء</button>
+  </div>
+
+  <div class="card">
+    <h2>🧸 دميات وألعاب</h2>
+    <p>شراء دمى وألعاب محشوة للأطفال</p>
+    <button class="buy-btn" onclick="shareProduct('دميات أطفال 🧸', 'طلب شراء دمية أطفال')">شراء</button>
+  </div>
+
+  <script>
+    function shareProduct(productName, productDetails) {
+      const shareData = {
+        title: 'شراء ' + productName,
+        text: productDetails,
+        url: window.location.href
+      };
+
+      if (navigator.share) {
+        navigator.share(shareData).catch((err) => {
+          if (err.name !== 'AbortError') {
+            console.error('Share Error:', err);
+          }
+        });
+      } else {
+        alert('ميزة المشاركة تتطلب فتح الرابط بـ HTTPS ومن متصفح Safari');
+      }
+    }
+
+    function openSettings() {
+      document.getElementById('settingsPage').classList.add('active');
+    }
+
+    function closeSettings() {
+      document.getElementById('settingsPage').classList.remove('active');
+    }
+
+    function setTheme(mode) {
+      const optLight = document.getElementById('optLight');
+      const optDark = document.getElementById('optDark');
+
+      if (mode === 'dark') {
+        document.body.classList.add('dark-mode');
+        optDark.classList.add('selected');
+        optLight.classList.remove('selected');
+      } else {
+        document.body.classList.remove('dark-mode');
+        optLight.classList.add('selected');
+        optDark.classList.remove('selected');
+      }
+    }
+
+    function setFontSize(size) {
+      const small = document.getElementById('fontSmall');
+      const medium = document.getElementById('fontMedium');
+      const large = document.getElementById('fontLarge');
+
+      small.classList.remove('selected');
+      medium.classList.remove('selected');
+      large.classList.remove('selected');
+
+      if (size === 'small') {
+        document.documentElement.style.setProperty('--base-font-size', '14px');
+        small.classList.add('selected');
+      } else if (size === 'large') {
+        document.documentElement.style.setProperty('--base-font-size', '18px');
+        large.classList.add('selected');
+      } else {
+        document.documentElement.style.setProperty('--base-font-size', '16px');
+        medium.classList.add('selected');
+      }
+    }
+
+    let currentLang = 'ar';
+    function toggleLanguage() {
+      const langText = document.getElementById('currentLangText');
+      if (currentLang === 'ar') {
+        currentLang = 'en';
+        langText.innerText = 'English';
+        document.documentElement.dir = 'ltr';
+        document.documentElement.lang = 'en';
+      } else {
+        currentLang = 'ar';
+        langText.innerText = 'العربية';
+        document.documentElement.dir = 'rtl';
+        document.documentElement.lang = 'ar';
+      }
+    }
+
+    function resetSettings() {
+      setTheme('light');
+      setFontSize('medium');
+      if (currentLang === 'en') toggleLanguage();
+      document.getElementById('notifToggle').checked = true;
+      alert('تمت إعادة ضبط الإعدادات إلى الوضع الافتراضي.');
+    }
+  </script>
+
+</body>
+</html>
