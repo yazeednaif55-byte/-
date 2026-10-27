@@ -1,0 +1,1276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مختبر العلوم التفاعلي (فيزياء وكيمياء)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Live Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts (Cairo & Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Cairo', sans-serif;
+            user-select: none;
+        }
+        canvas {
+            touch-action: none;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .tab-btn.active-phys {
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: white;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+        }
+        .tab-btn.active-chem {
+            background: linear-gradient(135deg, #9333ea, #c084fc);
+            color: white;
+            box-shadow: 0 0 15px rgba(192, 132, 252, 0.4);
+        }
+        .tool-btn.active {
+            background-color: rgba(56, 189, 248, 0.25);
+            border-color: #38bdf8;
+            color: #38bdf8;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-screen overflow-hidden flex flex-col">
+
+    <!-- TOP NAVBAR -->
+    <header class="h-14 glass-panel border-b border-slate-800 px-4 flex items-center justify-between shrink-0 z-30">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/30">
+                <i class="fa-solid fa-atom"></i>
+            </div>
+            <div>
+                <h1 class="text-base font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">مختبر العلوم التفاعلي</h1>
+                <p class="text-[10px] text-slate-400">محاكي فيزياء 2D وكيمياء تفاعلية متكامل</p>
+            </div>
+        </div>
+
+        <!-- MAIN TABS SWITCHER -->
+        <div class="flex items-center bg-slate-900/80 p-1 rounded-2xl border border-slate-800 gap-1">
+            <button id="tab-phys-btn" onclick="switchTab('physics')" class="tab-btn active-phys px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2">
+                <i class="fa-solid fa-shapes"></i>
+                <span>الفيزياء</span>
+            </button>
+            <button id="tab-chem-btn" onclick="switchTab('chemistry')" class="tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2">
+                <i class="fa-solid fa-flask"></i>
+                <span>الكيمياء والتفاعلات</span>
+            </button>
+        </div>
+
+        <!-- RIGHT ACTIONS -->
+        <div class="flex items-center gap-2">
+            <button onclick="toggleAudio()" class="w-9 h-9 rounded-xl glass-panel hover:bg-slate-800 transition flex items-center justify-center text-slate-300">
+                <i id="audio-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+            </button>
+            <button onclick="toggleAnalyticsModal()" class="w-9 h-9 rounded-xl glass-panel hover:bg-slate-800 transition flex items-center justify-center text-slate-300" title="الرسوم البيانية والتحليلات">
+                <i class="fa-solid fa-chart-line text-purple-400"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN WORKSPACE CONTENT -->
+    <main class="flex-1 relative overflow-hidden flex">
+
+        <!-- ========================================================= -->
+        <!-- VIEW 1: PHYSICS INTERACTIVE SIMULATOR -->
+        <!-- ========================================================= -->
+        <div id="view-physics" class="w-full h-full flex flex-col md:flex-row relative">
+            
+            <!-- LEFT CONTROL SIDEBAR -->
+            <aside class="w-full md:w-72 glass-panel border-l border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 z-20 max-h-60 md:max-h-full">
+                <!-- PRESETS -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-bookmark text-cyan-400"></i> تجارب فيزيائية جاهزة
+                    </h3>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button onclick="loadPhysPreset('newton')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-ellipsis text-cyan-400"></i> مهد نيوتن
+                        </button>
+                        <button onclick="loadPhysPreset('domino')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-[#22c55e] fa-cubes text-amber-400"></i> برج الدومينو
+                        </button>
+                        <button onclick="loadPhysPreset('chain')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-link text-emerald-400"></i> سلسلة معلقة
+                        </button>
+                        <button onclick="loadPhysPreset('ramp')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-hill-rockslide text-purple-400"></i> سباق منحدر
+                        </button>
+                        <button onclick="loadPhysPreset('magnetic')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2 col-span-2">
+                            <i class="fa-solid fa-magnet text-rose-400"></i> مجال مغناطيسي وتجاذب
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="border-slate-800">
+
+                <!-- TOOLS SELECTION -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-toolbox text-cyan-400"></i> الأدوات والتفاعل
+                    </h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="tool-drag" onclick="setPhysTool('drag')" class="tool-btn active glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-hand-pointer text-base"></i>
+                            <span>سحب/قذف</span>
+                        </button>
+                        <button id="tool-spawn" onclick="setPhysTool('spawn')" class="tool-btn glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-plus-circle text-base"></i>
+                            <span>إضافة جسم</span>
+                        </button>
+                        <button id="tool-line" onclick="setPhysTool('line')" class="tool-btn glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-pen-ruler text-base"></i>
+                            <span>رسم جدار</span>
+                        </button>
+                        <button id="tool-pin" onclick="setPhysTool('pin')" class="tool-btn glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-thumbtack text-base"></i>
+                            <span>تثبيت</span>
+                        </button>
+                        <button id="tool-magnet" onclick="setPhysTool('magnet')" class="tool-btn glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-magnet text-base"></i>
+                            <span>شحنة</span>
+                        </button>
+                        <button id="tool-cut" onclick="setPhysTool('cut')" class="tool-btn glass-panel p-2 rounded-xl text-xs flex flex-col items-center gap-1 hover:border-cyan-400 transition">
+                            <i class="fa-solid fa-trash-can text-base text-rose-400"></i>
+                            <span>حذف</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OBJECT PARAMETERS -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2">نوع الجسم المراد إضافته</h3>
+                    <div class="flex gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+                        <button id="shape-circle" onclick="selectShape('circle')" class="phys-shape-btn flex-1 py-1 rounded-lg text-xs font-bold bg-cyan-500 text-white">كرة</button>
+                        <button id="shape-box" onclick="selectShape('box')" class="phys-shape-btn flex-1 py-1 rounded-lg text-xs font-bold text-slate-400">مربع</button>
+                        <button id="shape-heavy" onclick="selectShape('heavy')" class="phys-shape-btn flex-1 py-1 rounded-lg text-xs font-bold text-slate-400">ثقيل جداً</button>
+                    </div>
+                </div>
+
+                <!-- ENVIRONMENT CONTROL SLIDERS -->
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-400">الجاذبية:</span>
+                            <span id="val-gravity" class="text-cyan-400 font-bold">9.8 m/s²</span>
+                        </div>
+                        <input type="range" min="0" max="35" step="0.5" value="9.8" oninput="setPhysGravity(this.value); document.getElementById('val-gravity').textContent = this.value + ' m/s²'" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-400">السرعة الزمنية:</span>
+                            <span id="val-speed" class="text-cyan-400 font-bold">1.0x</span>
+                        </div>
+                        <input type="range" min="0" max="2" step="0.1" value="1.0" oninput="setPhysSpeed(this.value); document.getElementById('val-speed').textContent = this.value + 'x'" class="w-full accent-cyan-400 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2 flex gap-2">
+                    <button onclick="togglePhysicsPause()" class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20">
+                        <i id="phys-pause-icon" class="fa-solid fa-pause"></i>
+                        <span>إيقاف / تشغيل</span>
+                    </button>
+                    <button onclick="clearPhysics()" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-xl text-xs font-bold transition">
+                        تفريغ
+                    </button>
+                </div>
+            </aside>
+
+            <!-- CANVAS AREA -->
+            <div id="physics-container" class="flex-1 h-full relative bg-slate-950 overflow-hidden">
+                <canvas id="physics-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+                
+                <!-- STATS OVERLAY -->
+                <div class="absolute top-4 left-4 glass-panel px-3 py-2 rounded-2xl flex items-center gap-4 text-xs font-mono pointer-events-none">
+                    <div><span class="text-slate-400">FPS:</span> <span id="phys-fps" class="text-emerald-400 font-bold">60</span></div>
+                    <div><span class="text-slate-400">الأجسام:</span> <span id="phys-obj-count" class="text-cyan-400 font-bold">0</span></div>
+                    <div><span class="text-slate-400">الطاقة الحركية:</span> <span id="phys-energy-count" class="text-purple-400 font-bold">0 J</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- VIEW 2: CHEMISTRY & REACTION SIMULATOR -->
+        <!-- ========================================================= -->
+        <div id="view-chemistry" class="w-full h-full hidden flex flex-col md:flex-row relative">
+            
+            <!-- LEFT CONTROL SIDEBAR -->
+            <aside class="w-full md:w-80 glass-panel border-l border-slate-800 p-4 flex flex-col gap-4 overflow-y-auto shrink-0 z-20">
+                <!-- PRESETS -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-vial-circle-check text-purple-400"></i> تفاعلات كيميائية جاهزة
+                    </h3>
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <button onclick="loadChemPreset('sodium')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-amber-400"></i> صوديوم + ماء
+                        </button>
+                        <button onclick="loadChemPreset('titration')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-droplet text-pink-400"></i>عايرة (حمض/قاعدة)
+                        </button>
+                        <button onclick="loadChemPreset('elephant')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-volcano text-purple-400"></i> معجون الفيل
+                        </button>
+                        <button onclick="loadChemPreset('zinc')" class="bg-slate-800 hover:bg-slate-700 text-xs py-2 px-2 rounded-xl text-right transition border border-slate-700/50 flex items-center gap-2">
+                            <i class="fa-solid fa-cubes text-slate-400"></i> خارصين + حمض
+                        </button>
+                    </div>
+                </div>
+
+                <hr class="border-slate-800">
+
+                <!-- ADD CHEMICALS SHELF -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-jar-wheat text-purple-400"></i> إضافة مواد للمخبرة
+                    </h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="addChemical('water')" class="bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>ماء H₂O</span>
+                            <i class="fa-solid fa-droplet text-blue-400"></i>
+                        </button>
+                        <button onclick="addChemical('hcl')" class="bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>حمض HCl</span>
+                            <i class="fa-solid fa-skull-crossbones text-rose-400"></i>
+                        </button>
+                        <button onclick="addChemical('naoh')" class="bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>قاعدة NaOH</span>
+                            <i class="fa-solid fa-box-tissue text-purple-400"></i>
+                        </button>
+                        <button onclick="addChemical('h2o2')" class="bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 border border-teal-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>فوق أكسيد H₂O₂</span>
+                            <i class="fa-solid fa-vial text-teal-400"></i>
+                        </button>
+                        <button onclick="addChemical('na')" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>صوديوم Na (نشط)</span>
+                            <i class="fa-solid fa-bolt text-amber-400"></i>
+                        </button>
+                        <button onclick="addChemical('zn')" class="bg-slate-700/40 hover:bg-slate-700/60 text-slate-300 border border-slate-600/40 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>خارصين Zn</span>
+                            <i class="fa-solid fa-cube text-slate-400"></i>
+                        </button>
+                        <button onclick="addChemical('caco3')" class="bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>كربونات CaCO₃</span>
+                            <i class="fa-solid fa-mountain text-emerald-400"></i>
+                        </button>
+                        <button onclick="addChemical('kmno4')" class="bg-pink-600/20 hover:bg-pink-600/30 text-pink-300 border border-pink-500/30 p-2 rounded-xl text-xs font-bold text-right flex items-center justify-between transition">
+                            <span>برمنجنات KMnO₄</span>
+                            <i class="fa-solid fa-wand-magic-sparkles text-pink-400"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- INDICATORS -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2">الكواشف</h3>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="addChemical('phph')" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-xs border border-slate-700 text-slate-300 text-right">
+                            الفينولفثالين (PhPh)
+                        </button>
+                        <button onclick="addChemical('universal')" class="bg-slate-800 hover:bg-slate-700 p-2 rounded-xl text-xs border border-slate-700 text-slate-300 text-right">
+                            الكاشف العام (Universal)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- THERMAL HEATING CONTROLS -->
+                <div>
+                    <h3 class="text-xs font-bold text-slate-400 mb-2 flex items-center justify-between">
+                        <span>التحكم الحراري</span>
+                        <span id="burner-status-tag" class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400">متوقف</span>
+                    </h3>
+                    <div class="flex gap-2">
+                        <button id="btn-toggle-burner" onclick="toggleBunsenBurner()" class="flex-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-fire-flame-curved"></i>
+                            <span>موقد بنسن</span>
+                        </button>
+                        <button onclick="applyIceBath()" class="flex-1 bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-snowflake"></i>
+                            <span>حمام ثلجي</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-auto pt-2">
+                    <button onclick="resetBeaker()" class="w-full bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>تفرغ وغسل الوعاء</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- SIMULATOR CENTER DISPLAY (BEAKER & GAS SIM) -->
+            <div class="flex-1 h-full relative bg-slate-950 flex items-center justify-center p-6 overflow-hidden">
+                
+                <!-- GAS AND SMOKE CANVAS OVERLAY -->
+                <canvas id="chem-gas-canvas" class="absolute inset-0 w-full h-full pointer-events-none z-10"></canvas>
+
+                <!-- BEAKER GRAPHICAL CONTAINER -->
+                <div class="relative w-72 h-96 border-4 border-t-0 border-slate-300/40 rounded-b-3xl bg-slate-900/40 backdrop-blur-sm flex flex-col justify-end overflow-hidden shadow-2xl shadow-cyan-500/10 z-0">
+                    
+                    <!-- MEASURING MARKS -->
+                    <div class="absolute right-2 top-0 bottom-0 flex flex-col justify-between py-6 text-[10px] text-slate-500 font-mono select-none pointer-events-none z-20">
+                        <span>500 ml</span>
+                        <span>400 ml</span>
+                        <span>300 ml</span>
+                        <span>200 ml</span>
+                        <span>100 ml</span>
+                    </div>
+
+                    <!-- DROPPER ANIMATED EFFECT -->
+                    <div id="chem-dropper-unit" class="absolute top-2 left-1/2 -translate-x-1/2 transition-opacity duration-300 opacity-0 pointer-events-none z-20">
+                        <i class="fa-solid fa-eye-dropper text-cyan-400 text-3xl animate-bounce"></i>
+                    </div>
+
+                    <!-- REACTION BUBBLES CONTAINER -->
+                    <div id="chem-bubbles" class="absolute inset-0 overflow-hidden pointer-events-none z-10"></div>
+
+                    <!-- PRECIPITATE BOTTOM LAYER -->
+                    <div id="chem-precipitate" class="w-full bg-slate-200/80 transition-all duration-700 z-10" style="height: 0px;"></div>
+
+                    <!-- LIQUID BODY -->
+                    <div id="chem-liquid" class="w-full transition-all duration-700 relative flex items-center justify-center" style="height: 40%; background-color: rgba(56, 189, 248, 0.45);">
+                        <div class="w-full h-2 bg-white/20 absolute top-0 animate-pulse"></div>
+                    </div>
+
+                    <!-- BUNSEN FLAME GRAPHIC -->
+                    <div id="bunsen-flame" class="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 transition-opacity duration-300 pointer-events-none">
+                        <div class="w-12 h-16 bg-gradient-to-t from-amber-500 via-orange-400 to-cyan-300 rounded-full blur-sm animate-pulse"></div>
+                    </div>
+                </div>
+
+                <!-- LIVE METRICS CARD (pH & TEMPERATURE) -->
+                <div class="absolute top-6 left-6 glass-panel p-4 rounded-2xl flex flex-col gap-3 min-w-[200px] z-20">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-slate-400 font-bold">درجة الحموضة pH:</span>
+                        <div id="chem-ph-badge" class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold flex items-center justify-center text-sm shadow">
+                            7.0
+                        </div>
+                    </div>
+                    <div class="text-xs font-mono text-slate-300 flex justify-between">
+                        <span>الحالة:</span>
+                        <span id="chem-ph-val" class="text-cyan-400 font-bold">7.0 (معتدل)</span>
+                    </div>
+                    <hr class="border-slate-800">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400">الحرارة:</span>
+                        <span id="chem-temp-val" class="text-amber-400 font-mono font-bold">25.0 °C</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400">الحجم الكلي:</span>
+                        <span id="chem-vol-val" class="text-cyan-400 font-mono font-bold">200 ml</span>
+                    </div>
+                </div>
+
+                <!-- LIVE LOG REACTION DISPLAY -->
+                <div class="absolute bottom-6 left-6 right-6 md:left-96 glass-panel px-4 py-3 rounded-2xl text-xs font-mono flex items-center gap-3 z-20">
+                    <i class="fa-solid fa-terminal text-cyan-400"></i>
+                    <span id="chem-reaction-log" class="text-slate-300 truncate">المخبرة جاهزة للتفاعل. اختر حامضاً أو قاعدة أو مادة نشطة.</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ANALYTICS MODAL WITH LIVE CHARTS -->
+    <div id="analytics-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="glass-panel w-full max-w-3xl rounded-3xl p-6 flex flex-col gap-4 border border-slate-700 shadow-2xl">
+            <div class="flex justify-between items-center">
+                <h2 class="text-base font-bold flex items-center gap-2 text-cyan-400">
+                    <i class="fa-solid fa-chart-line"></i> لوحة الرسوم البيانية والتحليلات الحية
+                </h2>
+                <button onclick="toggleAnalyticsModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-64">
+                <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 flex flex-col">
+                    <span class="text-xs font-bold text-slate-400 mb-2">طاقة الوضع والحركة (فيزياء)</span>
+                    <div class="flex-1 relative">
+                        <canvas id="chart-physics"></canvas>
+                    </div>
+                </div>
+                <div class="bg-slate-900/80 p-3 rounded-2xl border border-slate-800 flex flex-col">
+                    <span class="text-xs font-bold text-slate-400 mb-2">درجة الحموضة pH والحرارة (كيمياء)</span>
+                    <div class="flex-1 relative">
+                        <canvas id="chart-chemistry"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN JAVASCRIPT LOGIC -->
+    <script>
+        // AUDIO SYNTHESIZER (NO EXTERNAL FILES)
+        let soundEnabled = true;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSynthesizedSound(type) {
+            if (!soundEnabled) return;
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'pop') {
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.08);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'bubble') {
+                    osc.frequency.setValueAtTime(300 + Math.random() * 300, now);
+                    osc.frequency.linearRampToValueAtTime(550 + Math.random() * 200, now + 0.05);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'boom') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(160, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'sizzle') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(700 + Math.random() * 300, now);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                }
+            } catch(e) {}
+        }
+
+        function toggleAudio() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('audio-icon').className = soundEnabled ? 'fa-solid fa-volume-high text-cyan-400' : 'fa-solid fa-volume-xmark text-rose-400';
+        }
+
+        // ANALYTICS & MODALS
+        let physChart = null, chemChart = null;
+        let chartTime = 0;
+
+        function toggleAnalyticsModal() {
+            const modal = document.getElementById('analytics-modal');
+            if (modal.classList.contains('opacity-0')) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+                initCharts();
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function initCharts() {
+            if (physChart) return;
+            
+            const ctxP = document.getElementById('chart-physics').getContext('2d');
+            physChart = new Chart(ctxP, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'الطاقة الحركية (J)', data: [], borderColor: '#38bdf8', borderWidth: 2, tension: 0.3, fill: false },
+                        { label: 'طاقة الوضع (J)', data: [], borderColor: '#f59e0b', borderWidth: 2, tension: 0.3, fill: false }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
+            });
+
+            const ctxC = document.getElementById('chart-chemistry').getContext('2d');
+            chemChart = new Chart(ctxC, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'مستوى pH', data: [], borderColor: '#a855f7', borderWidth: 2, tension: 0.3 },
+                        { label: 'الحرارة (°C)', data: [], borderColor: '#f97316', borderWidth: 2, tension: 0.3 }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false } } }
+            });
+        }
+
+        // NAVIGATION VIEW SWITCHER
+        let activeTab = 'physics';
+        function switchTab(tab) {
+            activeTab = tab;
+            const physView = document.getElementById('view-physics');
+            const chemView = document.getElementById('view-chemistry');
+            const physBtn = document.getElementById('tab-phys-btn');
+            const chemBtn = document.getElementById('tab-chem-btn');
+
+            if (tab === 'physics') {
+                physView.classList.remove('hidden');
+                chemView.classList.add('hidden');
+                physBtn.className = 'tab-btn active-phys px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2';
+                chemBtn.className = 'tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2';
+                resizeCanvas();
+            } else {
+                physView.classList.add('hidden');
+                chemView.classList.remove('hidden');
+                chemBtn.className = 'tab-btn active-chem px-4 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-2';
+                physBtn.className = 'tab-btn px-4 py-1.5 rounded-xl text-xs font-bold text-slate-400 hover:text-white transition flex items-center gap-2';
+                resizeChemGasCanvas();
+            }
+        }
+
+        // ======================================================
+        // TAB 1: PHYSICS ENGINE & SIMULATOR
+        // ======================================================
+        const physCanvas = document.getElementById('physics-canvas');
+        const physCtx = physCanvas.getContext('2d');
+        const physContainer = document.getElementById('physics-container');
+
+        let physWidth = 0, physHeight = 0;
+        function resizeCanvas() {
+            if (!physContainer) return;
+            physWidth = physContainer.clientWidth;
+            physHeight = physContainer.clientHeight;
+            physCanvas.width = physWidth;
+            physCanvas.height = physHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let physGravity = 9.8;
+        let physRestitution = 0.75;
+        let physFriction = 0.1;
+        let physAirDrag = 0.01;
+        let physSpeed = 1;
+        let isPhysPaused = false;
+
+        let currentTool = 'drag';
+        let currentShape = 'circle';
+        let currentSize = 22;
+
+        let bodies = [];
+        let staticLines = [];
+        let springs = [];
+
+        let draggedBody = null;
+        let dragOffset = { x: 0, y: 0 };
+        let mousePos = { x: 0, y: 0 };
+        let prevMousePos = { x: 0, y: 0 };
+        let mouseVel = { x: 0, y: 0 };
+        let tempLineStart = null;
+
+        let physFps = 60, physFrameCount = 0, physLastFpsTime = performance.now();
+
+        class PhysicsBody {
+            constructor(x, y, opts = {}) {
+                this.x = x;
+                this.y = y;
+                this.vx = opts.vx || 0;
+                this.vy = opts.vy || 0;
+                this.radius = opts.radius || 20;
+                this.width = opts.width || 40;
+                this.height = opts.height || 40;
+                this.mass = opts.mass || 1;
+                this.invMass = opts.isStatic ? 0 : 1 / this.mass;
+                this.isStatic = opts.isStatic || false;
+                this.type = opts.type || 'circle';
+                this.color = opts.color || '#38bdf8';
+                this.pinned = false;
+                this.charge = opts.charge || 0;
+            }
+
+            update(dt) {
+                if (this.isStatic || this.pinned) return;
+
+                this.vx *= (1 - physAirDrag);
+                this.vy *= (1 - physAirDrag);
+                this.vy += physGravity * 40 * dt;
+
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                // Canvas Boundary Collisions
+                const r = this.radius;
+                if (this.x - r < 0) { this.x = r; this.vx = -this.vx * physRestitution; playSynthesizedSound('pop'); }
+                if (this.x + r > physWidth) { this.x = physWidth - r; this.vx = -this.vx * physRestitution; playSynthesizedSound('pop'); }
+                if (this.y - r < 0) { this.y = r; this.vy = -this.vy * physRestitution; playSynthesizedSound('pop'); }
+                if (this.y + r > physHeight) {
+                    this.y = physHeight - r;
+                    this.vy = -this.vy * physRestitution;
+                    this.vx *= (1 - physFriction);
+                    if (Math.abs(this.vy) > 20) playSynthesizedSound('pop');
+                }
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.beginPath();
+                if (this.type === 'circle') {
+                    ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                } else {
+                    ctx.rect(-this.width / 2, -this.height / 2, this.width, this.height);
+                }
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff66';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                if (this.charge !== 0) {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = 'bold 12px Cairo';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(this.charge > 0 ? '+' : '-', 0, 0);
+                }
+
+                if (this.pinned) {
+                    ctx.fillStyle = '#f43f5e';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        class SpringConstraint {
+            constructor(a, b, length, stiffness = 0.15) {
+                this.a = a;
+                this.b = b;
+                this.length = length;
+                this.stiffness = stiffness;
+            }
+
+            update() {
+                const dx = this.b.x - this.a.x;
+                const dy = this.b.y - this.a.y;
+                const dist = Math.hypot(dx, dy) || 1;
+                const force = (dist - this.length) * this.stiffness;
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+
+                if (!this.a.isStatic && !this.a.pinned) { this.a.vx += fx / this.a.mass; this.a.vy += fy / this.a.mass; }
+                if (!this.b.isStatic && !this.b.pinned) { this.b.vx -= fx / this.b.mass; this.b.vy -= fy / this.b.mass; }
+            }
+
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.moveTo(this.a.x, this.a.y);
+                ctx.lineTo(this.b.x, this.b.y);
+                ctx.strokeStyle = '#6366f1';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+            }
+        }
+
+        // ROBUST WALL LINE COLLISION RESOLUTION
+        function resolveWallCollision(body, wall) {
+            let dx = wall.x2 - wall.x1;
+            let dy = wall.y2 - wall.y1;
+            let lenSq = dx * dx + dy * dy;
+            if (lenSq === 0) return;
+
+            let t = Math.max(0, Math.min(1, ((body.x - wall.x1) * dx + (body.y - wall.y1) * dy) / lenSq));
+            let projX = wall.x1 + t * dx;
+            let projY = wall.y1 + t * dy;
+
+            let distDX = body.x - projX;
+            let distDY = body.y - projY;
+            let distance = Math.hypot(distDX, distDY);
+            let minDist = body.radius + 4;
+
+            if (distance < minDist && distance > 0) {
+                let nx = distDX / distance;
+                let ny = distDY / distance;
+                
+                let overlap = minDist - distance;
+                body.x += nx * overlap;
+                body.y += ny * overlap;
+
+                let dot = body.vx * nx + body.vy * ny;
+                if (dot < 0) {
+                    body.vx -= (1 + physRestitution) * dot * nx;
+                    body.vy -= (1 + physRestitution) * dot * ny;
+                    playSynthesizedSound('pop');
+                }
+            }
+        }
+
+        function resolvePhysicsCollisions() {
+            // Static Line Wall Collisions
+            for (let b of bodies) {
+                if (b.isStatic || b.pinned) continue;
+                for (let wall of staticLines) {
+                    resolveWallCollision(b, wall);
+                }
+            }
+
+            // Circle-Circle Rigid Bodies Collisions
+            for (let i = 0; i < bodies.length; i++) {
+                for (let j = i + 1; j < bodies.length; j++) {
+                    let b1 = bodies[i], b2 = bodies[j];
+
+                    if (b1.charge !== 0 && b2.charge !== 0) {
+                        let dx = b2.x - b1.x, dy = b2.y - b1.y;
+                        let dist = Math.hypot(dx, dy) || 1;
+                        if (dist < 250) {
+                            let force = (b1.charge * b2.charge * -800) / (dist * dist);
+                            let fx = (dx / dist) * force, fy = (dy / dist) * force;
+                            if (!b1.isStatic && !b1.pinned) { b1.vx += fx; b1.vy += fy; }
+                            if (!b2.isStatic && !b2.pinned) { b2.vx -= fx; b2.vy -= fy; }
+                        }
+                    }
+
+                    if (b1.type === 'circle' && b2.type === 'circle') {
+                        let dx = b2.x - b1.x, dy = b2.y - b1.y;
+                        let dist = Math.hypot(dx, dy);
+                        let minDist = b1.radius + b2.radius;
+                        if (dist < minDist) {
+                            let nx = dx / (dist || 1), ny = dy / (dist || 1);
+                            let overlap = minDist - dist;
+                            let totalInvMass = b1.invMass + b2.invMass;
+                            if (totalInvMass > 0) {
+                                if (!b1.pinned) { b1.x -= nx * overlap * (b1.invMass / totalInvMass); b1.y -= ny * overlap * (b1.invMass / totalInvMass); }
+                                if (!b2.pinned) { b2.x += nx * overlap * (b2.invMass / totalInvMass); b2.y += ny * overlap * (b2.invMass / totalInvMass); }
+                            }
+                            let kx = b1.vx - b2.vx, ky = b1.vy - b2.vy;
+                            let p = 2 * (nx * kx + ny * ky) / (b1.mass + b2.mass);
+                            if (nx * kx + ny * ky > 0) {
+                                if (!b1.isStatic && !b1.pinned) { b1.vx -= p * b2.mass * nx * (1 + physRestitution); b1.vy -= p * b2.mass * ny * (1 + physRestitution); }
+                                if (!b2.isStatic && !b2.pinned) { b2.vx += p * b1.mass * nx * (1 + physRestitution); b2.vy += p * b1.mass * ny * (1 + physRestitution); }
+                                playSynthesizedSound('pop');
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function calculateTotalKineticEnergy() {
+            let ke = 0, pe = 0;
+            for (let b of bodies) {
+                if (!b.isStatic) {
+                    let v = Math.hypot(b.vx, b.vy);
+                    ke += 0.5 * b.mass * v * v;
+                    pe += b.mass * physGravity * Math.max(0, (physHeight - b.y));
+                }
+            }
+            return { ke: Math.round(ke / 100), pe: Math.round(pe / 100) };
+        }
+
+        function physLoop(timestamp) {
+            let dt = 0.016 * physSpeed;
+
+            if (activeTab === 'physics') {
+                physCtx.clearRect(0, 0, physWidth, physHeight);
+
+                if (!isPhysPaused && physSpeed > 0) {
+                    for (let s of springs) s.update();
+                    for (let b of bodies) b.update(dt);
+                    resolvePhysicsCollisions();
+                }
+
+                // Render Static Lines Walls
+                for (let l of staticLines) {
+                    physCtx.save();
+                    physCtx.beginPath();
+                    physCtx.moveTo(l.x1, l.y1);
+                    physCtx.lineTo(l.x2, l.y2);
+                    physCtx.strokeStyle = '#f59e0b';
+                    physCtx.shadowColor = 'rgba(245, 158, 11, 0.5)';
+                    physCtx.shadowBlur = 8;
+                    physCtx.lineWidth = 8;
+                    physCtx.lineCap = 'round';
+                    physCtx.stroke();
+                    physCtx.restore();
+                }
+
+                for (let s of springs) s.draw(physCtx);
+                for (let b of bodies) b.draw(physCtx);
+
+                if (currentTool === 'line' && tempLineStart) {
+                    physCtx.beginPath();
+                    physCtx.moveTo(tempLineStart.x, tempLineStart.y);
+                    physCtx.lineTo(mousePos.x, mousePos.y);
+                    physCtx.strokeStyle = '#38bdf8aa';
+                    physCtx.lineWidth = 4;
+                    physCtx.setLineDash([6, 6]);
+                    physCtx.stroke();
+                    physCtx.setLineDash([]);
+                }
+
+                // Stats Update
+                physFrameCount++;
+                if (timestamp - physLastFpsTime >= 500) {
+                    physFps = Math.round((physFrameCount * 1000) / (timestamp - physLastFpsTime));
+                    const energy = calculateTotalKineticEnergy();
+                    document.getElementById('phys-fps').textContent = physFps;
+                    document.getElementById('phys-obj-count').textContent = bodies.length;
+                    document.getElementById('phys-energy-count').textContent = `${energy.ke} J`;
+                    
+                    if (physChart && !isPhysPaused) {
+                        chartTime += 0.5;
+                        physChart.data.labels.push(chartTime);
+                        physChart.data.datasets[0].data.push(energy.ke);
+                        physChart.data.datasets[1].data.push(energy.pe);
+                        if (physChart.data.labels.length > 20) {
+                            physChart.data.labels.shift();
+                            physChart.data.datasets[0].data.shift();
+                            physChart.data.datasets[1].data.shift();
+                        }
+                        physChart.update();
+                    }
+
+                    physFrameCount = 0;
+                    physLastFpsTime = timestamp;
+                }
+            }
+            requestAnimationFrame(physLoop);
+        }
+
+        // PRESETS & TOOLS
+        function loadPhysPreset(name) {
+            clearPhysics();
+            if (name === 'newton') {
+                let startX = physWidth / 2 - 80, startY = 140, r = 20;
+                for (let i = 0; i < 5; i++) {
+                    let anchor = new PhysicsBody(startX + i * r * 2, startY, { isStatic: true, radius: 4 });
+                    let ball = new PhysicsBody(startX + i * r * 2 + (i === 0 ? -120 : 0), startY + 160, { radius: r, mass: 2, color: '#38bdf8' });
+                    bodies.push(anchor, ball);
+                    springs.push(new SpringConstraint(anchor, ball, 160, 0.9));
+                }
+            } else if (name === 'domino') {
+                for (let i = 0; i < 9; i++) {
+                    bodies.push(new PhysicsBody(physWidth / 2 - 120 + i * 32, physHeight - 75, { type: 'box', width: 12, height: 55, mass: 1.2, color: '#f59e0b' }));
+                }
+                bodies.push(new PhysicsBody(physWidth / 2 - 180, physHeight - 100, { radius: 22, mass: 8, color: '#ec4899', vx: 220 }));
+            } else if (name === 'chain') {
+                let prev = new PhysicsBody(physWidth / 2 - 140, 160, { isStatic: true, radius: 6 });
+                bodies.push(prev);
+                for (let i = 0; i < 10; i++) {
+                    let curr = new PhysicsBody(physWidth / 2 - 140 + (i + 1) * 25, 160, { radius: 9, mass: 0.8, color: '#10b981' });
+                    bodies.push(curr);
+                    springs.push(new SpringConstraint(prev, curr, 22, 0.8));
+                    prev = curr;
+                }
+                let endPin = new PhysicsBody(physWidth / 2 + 135, 160, { isStatic: true, radius: 6 });
+                bodies.push(endPin);
+                springs.push(new SpringConstraint(prev, endPin, 22, 0.8));
+            } else if (name === 'ramp') {
+                staticLines.push({ x1: 50, y1: 150, x2: physWidth * 0.6, y2: 300 });
+                staticLines.push({ x1: physWidth * 0.4, y1: 420, x2: physWidth - 50, y2: 520 });
+                for (let i = 0; i < 5; i++) {
+                    bodies.push(new PhysicsBody(80 + i * 25, 60 - i * 30, { radius: 16, mass: 2, color: '#c026d3' }));
+                }
+            } else if (name === 'magnetic') {
+                bodies.push(new PhysicsBody(physWidth / 2 - 80, physHeight / 2, { radius: 25, mass: 5, color: '#ef4444', charge: 1 }));
+                bodies.push(new PhysicsBody(physWidth / 2 + 80, physHeight / 2, { radius: 25, mass: 5, color: '#3b82f6', charge: -1 }));
+                bodies.push(new PhysicsBody(physWidth / 2, physHeight / 2 - 100, { radius: 18, mass: 2, color: '#a855f7', charge: 1, vx: 50 }));
+            }
+        }
+
+        function clearPhysics() { bodies = []; staticLines = []; springs = []; }
+        function setPhysTool(t) { currentTool = t; document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); document.getElementById(`tool-${t}`).classList.add('active'); }
+        function selectShape(s) { currentShape = s; document.querySelectorAll('.phys-shape-btn').forEach(b => b.classList.remove('active', 'bg-cyan-500', 'text-white')); document.getElementById(`shape-${s}`).classList.add('active', 'bg-cyan-500', 'text-white'); }
+        function setPhysGravity(g) { physGravity = g; }
+        function setPhysSpeed(s) { physSpeed = s; }
+        function togglePhysicsPause() {
+            isPhysPaused = !isPhysPaused;
+            document.getElementById('phys-pause-icon').className = isPhysPaused ? 'fa-solid fa-play' : 'fa-solid fa-pause';
+        }
+
+        function getPhysPointer(e) {
+            const rect = physCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        physCanvas.addEventListener('mousedown', (e) => {
+            const p = getPhysPointer(e);
+            mousePos = p;
+            if (currentTool === 'drag') {
+                for (let b of bodies) {
+                    if (Math.hypot(b.x - p.x, b.y - p.y) < b.radius * 1.5) {
+                        draggedBody = b;
+                        b.pinned = true;
+                        dragOffset = { x: p.x - b.x, y: p.y - b.y };
+                        break;
+                    }
+                }
+            } else if (currentTool === 'spawn') {
+                bodies.push(new PhysicsBody(p.x, p.y, {
+                    type: currentShape === 'box' ? 'box' : 'circle',
+                    radius: parseInt(currentSize),
+                    mass: currentShape === 'heavy' ? 35 : currentSize / 10,
+                    color: currentShape === 'heavy' ? '#f43f5e' : '#38bdf8'
+                }));
+            } else if (currentTool === 'line') {
+                tempLineStart = p;
+            } else if (currentTool === 'pin') {
+                for (let b of bodies) {
+                    if (Math.hypot(b.x - p.x, b.y - p.y) < b.radius * 1.5) {
+                        b.pinned = !b.pinned;
+                        break;
+                    }
+                }
+            } else if (currentTool === 'magnet') {
+                bodies.push(new PhysicsBody(p.x, p.y, { radius: 22, mass: 4, color: '#ef4444', charge: 1 }));
+            } else if (currentTool === 'cut') {
+                bodies = bodies.filter(b => Math.hypot(b.x - p.x, b.y - p.y) > b.radius * 1.5);
+            }
+        });
+
+        physCanvas.addEventListener('mousemove', (e) => {
+            const p = getPhysPointer(e);
+            mouseVel = { x: p.x - prevMousePos.x, y: p.y - prevMousePos.y };
+            prevMousePos = p;
+            mousePos = p;
+            if (draggedBody) {
+                draggedBody.x = p.x - dragOffset.x;
+                draggedBody.y = p.y - dragOffset.y;
+                draggedBody.vx = mouseVel.x * 25;
+                draggedBody.vy = mouseVel.y * 25;
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            if (draggedBody) { draggedBody.pinned = false; draggedBody = null; }
+            if (currentTool === 'line' && tempLineStart) {
+                staticLines.push({ x1: tempLineStart.x, y1: tempLineStart.y, x2: mousePos.x, y2: mousePos.y });
+                tempLineStart = null;
+            }
+        });
+
+        // Touch Support
+        physCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const p = getPhysPointer(e); physCanvas.dispatchEvent(new MouseEvent('mousedown', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+        physCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); physCanvas.dispatchEvent(new MouseEvent('mousemove', { clientX: e.touches[0].clientX, clientY: e.touches[0].clientY })); });
+        physCanvas.addEventListener('touchend', (e) => { window.dispatchEvent(new Event('mouseup')); });
+
+
+        // ======================================================
+        // TAB 2: CHEMISTRY ENGINE & SIMULATOR
+        // ======================================================
+        let chemState = {
+            volume: 200,
+            pH: 7.0,
+            temp: 25.0,
+            color: 'rgba(56, 189, 248, 0.45)',
+            precipitate: 0,
+            hasIndicator: false,
+            indicatorType: null,
+            isBurnerOn: false
+        };
+
+        const gasCanvas = document.getElementById('chem-gas-canvas');
+        const gasCtx = gasCanvas.getContext('2d');
+        let gasParticles = [];
+
+        function resizeChemGasCanvas() {
+            if (!gasCanvas) return;
+            gasCanvas.width = gasCanvas.clientWidth;
+            gasCanvas.height = gasCanvas.clientHeight;
+        }
+
+        class SmokeParticle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 1.5;
+                this.vy = -Math.random() * 2 - 1;
+                this.size = Math.random() * 8 + 4;
+                this.alpha = 0.8;
+                this.color = color || 'rgba(255, 255, 255, ';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.alpha -= 0.015;
+                this.size += 0.2;
+            }
+            draw(ctx) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color + this.alpha + ')';
+                ctx.fill();
+            }
+        }
+
+        function spawnGasSmoke(count = 10, color = 'rgba(240, 240, 250, ') {
+            resizeChemGasCanvas();
+            for (let i = 0; i < count; i++) {
+                gasParticles.push(new SmokeParticle(gasCanvas.width / 2 + (Math.random() - 0.5) * 60, gasCanvas.height - 10, color));
+            }
+        }
+
+        function chemGasLoop() {
+            if (activeTab === 'chemistry') {
+                gasCtx.clearRect(0, 0, gasCanvas.width, gasCanvas.height);
+                for (let i = gasParticles.length - 1; i >= 0; i--) {
+                    let p = gasParticles[i];
+                    p.update();
+                    p.draw(gasCtx);
+                    if (p.alpha <= 0) gasParticles.splice(i, 1);
+                }
+
+                if (chemState.isBurnerOn) {
+                    chemState.temp = Math.min(100, chemState.temp + 0.15);
+                    if (chemState.temp >= 100 && Math.random() < 0.3) {
+                        spawnGasSmoke(2, 'rgba(255, 255, 255, ');
+                        triggerBubbles(2);
+                        playSynthesizedSound('sizzle');
+                    }
+                    updateChemUI();
+                }
+            }
+            requestAnimationFrame(chemGasLoop);
+        }
+
+        function updateChemUI() {
+            const liquid = document.getElementById('chem-liquid');
+            const phVal = document.getElementById('chem-ph-val');
+            const tempVal = document.getElementById('chem-temp-val');
+            const volVal = document.getElementById('chem-vol-val');
+            const precip = document.getElementById('chem-precipitate');
+
+            const hPercent = Math.min(95, Math.max(15, (chemState.volume / 500) * 100));
+            liquid.style.height = `${hPercent}%`;
+            liquid.style.backgroundColor = chemState.color;
+            precip.style.height = `${chemState.precipitate}px`;
+
+            let phText = 'معتدل';
+            let badgeBg = 'bg-emerald-500/20 text-emerald-400';
+            if (chemState.pH < 6.5) { phText = 'حمضي'; badgeBg = 'bg-rose-500/20 text-rose-400'; }
+            if (chemState.pH > 7.5) { phText = 'قاعدي/قلوي'; badgeBg = 'bg-purple-500/20 text-purple-400'; }
+
+            phVal.textContent = `${chemState.pH.toFixed(1)} (${phText})`;
+            document.getElementById('chem-ph-badge').className = `w-10 h-10 rounded-xl flex items-center justify-center font-bold text-base shadow ${badgeBg}`;
+            document.getElementById('chem-ph-badge').textContent = chemState.pH.toFixed(1);
+            tempVal.textContent = `${chemState.temp.toFixed(1)} °C`;
+            volVal.textContent = `${chemState.volume} ml`;
+
+            if (chemChart && activeTab === 'chemistry') {
+                chartTime += 0.5;
+                chemChart.data.labels.push(chartTime);
+                chemChart.data.datasets[0].data.push(chemState.pH);
+                chemChart.data.datasets[1].data.push(chemState.temp);
+                if (chemChart.data.labels.length > 20) {
+                    chemChart.data.labels.shift();
+                    chemChart.data.datasets[0].data.shift();
+                    chemChart.data.datasets[1].data.shift();
+                }
+                chemChart.update();
+            }
+        }
+
+        function triggerBubbles(count = 15) {
+            const container = document.getElementById('chem-bubbles');
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const b = document.createElement('div');
+                const size = Math.random() * 8 + 4;
+                b.className = 'absolute bg-white/40 rounded-full animate-bounce';
+                b.style.width = `${size}px`;
+                b.style.height = `${size}px`;
+                b.style.left = `${Math.random() * 90}%`;
+                b.style.bottom = '0px';
+                b.style.animationDuration = `${Math.random() * 1.5 + 0.8}s`;
+                container.appendChild(b);
+            }
+            setTimeout(() => { container.innerHTML = ''; }, 3000);
+        }
+
+        function triggerDropperAnimation() {
+            const unit = document.getElementById('chem-dropper-unit');
+            unit.style.opacity = '1';
+            setTimeout(() => { unit.style.opacity = '0'; }, 1000);
+        }
+
+        function setChemLog(msg) {
+            document.getElementById('chem-reaction-log').textContent = msg;
+        }
+
+        function addChemical(type) {
+            triggerDropperAnimation();
+            chemState.volume = Math.min(500, chemState.volume + 30);
+
+            if (type === 'water') {
+                chemState.pH = (chemState.pH + 7.0) / 2;
+                setChemLog('تمت إضافة ماء نقي H₂O');
+                playSynthesizedSound('bubble');
+            } else if (type === 'hcl' || type === 'h2so4') {
+                chemState.pH = Math.max(0.5, chemState.pH - 3.0);
+                chemState.temp += 4;
+                if (chemState.hasIndicator && chemState.indicatorType === 'phph') chemState.color = 'rgba(239, 68, 68, 0.45)';
+                if (chemState.indicatorType === 'universal') chemState.color = 'rgba(239, 68, 68, 0.85)';
+                setChemLog(`تمت إضافة حمض (${type.toUpperCase()}) - انخفاض pH وتفاعل طارد للحرارة`);
+                playSynthesizedSound('sizzle');
+            } else if (type === 'naoh' || type === 'nh3') {
+                chemState.pH = Math.min(13.8, chemState.pH + 3.0);
+                chemState.temp += 3;
+                if (chemState.hasIndicator && chemState.indicatorType === 'phph') chemState.color = 'rgba(236, 72, 153, 0.85)';
+                if (chemState.indicatorType === 'universal') chemState.color = 'rgba(147, 51, 234, 0.85)';
+                setChemLog(`إضافة محلول قاعدي (${type.toUpperCase()}) - ارتفاع pH`);
+                playSynthesizedSound('bubble');
+            } else if (type === 'h2o2') {
+                triggerBubbles(20);
+                setChemLog('إضافة فوق أكسيد الهيدروجين H₂O₂');
+                playSynthesizedSound('sizzle');
+            } else if (type === 'na') {
+                triggerBubbles(40);
+                spawnGasSmoke(30, 'rgba(251, 146, 60, ');
+                chemState.temp += 45;
+                chemState.pH = 13.5;
+                chemState.color = 'rgba(245, 158, 11, 0.7)';
+                setChemLog('⚡ تفاعل الصوديوم النقي Na الفوار مع الماء! انبعاث حرارة شديد وتصاعد غاز H₂');
+                playSynthesizedSound('boom');
+            } else if (type === 'zn') {
+                triggerBubbles(25);
+                spawnGasSmoke(15, 'rgba(200, 200, 220, ');
+                chemState.temp += 12;
+                setChemLog('تفاعل مسحوق الخارصين Zn وتصاعد غاز الهيدروجين');
+                playSynthesizedSound('sizzle');
+            } else if (type === 'caco3') {
+                triggerBubbles(20);
+                chemState.precipitate = 18;
+                setChemLog('إضافة كربونات الكالسيوم CaCO₃ وتكون ترسبات صلبة قاع الوعاء');
+                playSynthesizedSound('bubble');
+            } else if (type === 'kmno4') {
+                spawnGasSmoke(35, 'rgba(192, 38, 211, ');
+                triggerBubbles(35);
+                chemState.temp += 35;
+                chemState.color = 'rgba(147, 51, 234, 0.9)';
+                setChemLog('🌋 تفاعل البرمنجنات KMnO₄ وتكون رغوة فوارة كثيفة!');
+                playSynthesizedSound('boom');
+            } else if (type === 'phph') {
+                chemState.hasIndicator = true;
+                chemState.indicatorType = 'phph';
+                chemState.color = chemState.pH > 8.2 ? 'rgba(236, 72, 153, 0.85)' : 'rgba(224, 231, 255, 0.35)';
+                setChemLog('إضافة كاشف الفينولفثالين (وردي في القاعدة / شفاف في الحمض)');
+            } else if (type === 'universal') {
+                chemState.hasIndicator = true;
+                chemState.indicatorType = 'universal';
+                chemState.color = chemState.pH < 6 ? 'rgba(239, 68, 68, 0.85)' : (chemState.pH > 8 ? 'rgba(147, 51, 234, 0.85)' : 'rgba(34, 197, 94, 0.85)');
+                setChemLog('إضافة الكاشف العام (تغير الطيف حسب درجة pH)');
+            }
+
+            updateChemUI();
+        }
+
+        function toggleBunsenBurner() {
+            chemState.isBurnerOn = !chemState.isBurnerOn;
+            const flame = document.getElementById('bunsen-flame');
+            const statusTag = document.getElementById('burner-status-tag');
+            const btn = document.getElementById('btn-toggle-burner');
+
+            if (chemState.isBurnerOn) {
+                flame.classList.remove('opacity-0');
+                statusTag.textContent = 'يعمل 🔥';
+                statusTag.className = 'text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30';
+                btn.className = 'flex-1 bg-amber-500 text-slate-950 border border-amber-400 py-2 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/30';
+                setChemLog('تم تشغيل موقد بنسن 🔥 - ارتفاع تدريجي في الحرارة');
+                playSynthesizedSound('sizzle');
+            } else {
+                flame.classList.add('opacity-0');
+                statusTag.textContent = 'متوقف';
+                statusTag.className = 'text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400';
+                btn.className = 'flex-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5';
+                setChemLog('إيقاف موقد بنسن');
+            }
+        }
+
+        function applyIceBath() {
+            chemState.temp = Math.max(4.0, chemState.temp - 20.0);
+            setChemLog('تطبيق حمام ثلجي ❄️ - انخفاض سريع في الحرارة');
+            playSynthesizedSound('sizzle');
+            updateChemUI();
+        }
+
+        function loadChemPreset(preset) {
+            resetBeaker();
+            if (preset === 'sodium') {
+                addChemical('na');
+            } else if (preset === 'titration') {
+                addChemical('hcl');
+                addChemical('phph');
+                setTimeout(() => addChemical('naoh'), 1200);
+            } else if (preset === 'elephant') {
+                addChemical('h2o2');
+                setTimeout(() => addChemical('kmno4'), 800);
+            } else if (preset === 'zinc') {
+                addChemical('hcl');
+                setTimeout(() => addChemical('zn'), 800);
+            }
+        }
+
+        function resetBeaker() {
+            chemState = {
+                volume: 200,
+                pH: 7.0,
+                temp: 25.0,
+                color: 'rgba(56, 189, 248, 0.45)',
+                precipitate: 0,
+                hasIndicator: false,
+                indicatorType: null,
+                isBurnerOn: false
+            };
+            document.getElementById('chem-bubbles').innerHTML = '';
+            document.getElementById('bunsen-flame').classList.add('opacity-0');
+            document.getElementById('burner-status-tag').textContent = 'متوقف';
+            document.getElementById('burner-status-tag').className = 'text-[10px] bg-slate-800 px-2 py-0.5 rounded text-slate-400';
+            setChemLog('تم تفريغ وغسل الوعاء وتعبئته بماء نقي');
+            updateChemUI();
+        }
+
+        // WINDOW ONLOAD
+        window.onload = function() {
+            loadPhysPreset('newton');
+            requestAnimationFrame(physLoop);
+            requestAnimationFrame(chemGasLoop);
+            updateChemUI();
+        };
+    </script>
+</body>
+</html>
